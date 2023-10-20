@@ -1,27 +1,36 @@
-<div id="wrapper">
-  <table class="tools" cellpadding="0" cellspacing="0"><tr></tr></table>
-<h1 class="title">LiveSwitch Tic-Tac-Toe</h1>
-<div class="board">
-            <div data-cell-index="0" class="cell"></div>
-            <div data-cell-index="1" class="cell"></div>
-            <div data-cell-index="2" class="cell"></div>
-            <div data-cell-index="3" class="cell"></div>
-            <div data-cell-index="4" class="cell"></div>
-            <div data-cell-index="5" class="cell"></div>
-            <div data-cell-index="6" class="cell"></div>
-            <div data-cell-index="7" class="cell"></div>
-            <div data-cell-index="8" class="cell"></div>
-        </div>
-        <h2 class="status"></h2>
-  <table class="picker" cellpadding="0" cellspacing="0"><tr></tr></table>
-  <div style="text-align:center;width:100%;">
-    <button class="start" disabled=true>Start</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LiveSwitch Tic-Tac-Toe</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="wrapper">
+    <h1 class="title">LiveSwitch Tic-Tac-Toe</h1>
+    <div class="board">
+      <div data-cell-index="0" class="cell"></div>
+      <div data-cell-index="1" class="cell"></div>
+      <div data-cell-index="2" class="cell"></div>
+      <div data-cell-index="3" class="cell"></div>
+      <div data-cell-index="4" class="cell"></div>
+      <div data-cell-index="5" class="cell"></div>
+      <div data-cell-index="6" class="cell"></div>
+      <div data-cell-index="7" class="cell"></div>
+      <div data-cell-index="8" class="cell"></div>
+    </div>
+    <h2 class="status"></h2>
+    <div style="text-align:center;width:100%;">
+      <button class="start" disabled=true>Start</button>
+    </div>
   </div>
-</div>
+  <p style="text-align: center">
+    Powered by <a href="http://www.liveswitch.com/" target="_blank">LiveSwitch</a>
+  </p>
 
-<p style="text-align: center">
-  Powered by <a href="http://www.liveswitch.com/" target="_blank">LiveSwitch</a>
-</p>
-
-<!-- Scripts -->
-<script src="scripts/index.js"></script>
+  <!-- Scripts -->
+  <script src="https://cdn.liveswitch.io/liveswitch/v3.0.3/js/fm.liveswitch.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>
