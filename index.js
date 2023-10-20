@@ -68,6 +68,54 @@ const statusDisplay = document.querySelector('.status');
 const winningMessage = () => `Player ${currentPlayer} has won!`;
 const drawMessage = () => `Game ended in a draw!`;
 
+// New: Keep track of the number of players in the game.
+let playerCount = 0;
+
+// New: Function to determine the start player.
+function determineStartPlayer() {
+  return playerCount % 2 === 0 ? 'X' : 'O';
+}
+
+// New: Function to reset the game state.
+function resetGameState() {
+  gameState = ["", "", "", "", "", "", "", "", ""];
+  currentPlayer = determineStartPlayer();
+  statusDisplay.innerHTML = '';
+  document.querySelectorAll('.cell').forEach(cell => cell.innerHTML = '');
+  gameActive = true;
+}
+
+// New: Function to handle player join.
+function handlePlayerJoin() {
+  playerCount++;
+  if (playerCount === 2) {
+    startButton.disabled = false;
+    resetGameState();
+    liveswitchChannel.sendMessage("Two players have joined. Game is starting.");
+  }
+}
+
+// New: Function to handle player leave.
+function handlePlayerLeave() {
+  playerCount--;
+  startButton.disabled = true;
+  resetGameState();
+  liveswitchChannel.sendMessage("A player left. Waiting for another player to join.");
+}
+
+// New: Function to update the game board.
+function updateGameBoard() {
+  document.querySelectorAll('.cell').forEach((cell, index) => {
+    cell.innerHTML = gameState[index];
+  });
+}
+
+// New: Function to handle the game result.
+function handleGameResult(result) {
+  statusDisplay.innerHTML = result;
+  gameActive = false;
+}
+
 let connectToLiveSwitchServer = function() {
   let promise = new fm.liveswitch.Promise();
 
@@ -86,9 +134,10 @@ let connectToLiveSwitchServer = function() {
 }
 
 let handleStartClick = function() {
-  gameActive = true;
-  startButton.style.display = "none";
-  liveswitchChannel.sendMessage("Started game.");
+  if (!gameActive) {
+    resetGameState();
+    liveswitchChannel.sendMessage("Game is starting.");
+  }
 }
 
 let handleCellClick = function(clickedCellEvent) {
@@ -100,17 +149,18 @@ let handleCellClick = function(clickedCellEvent) {
     return;
   }
   handleCellPlayed(clickedCell, clickedCellIndex);
-  handleResultValidation();
 }
 
 let handleCellPlayed = function(clickedCell, clickedCellIndex) {
   gameState[clickedCellIndex] = currentPlayer;
   clickedCell.innerHTML = currentPlayer;
+  updateGameBoard();
   liveswitchChannel.sendMessage(`${currentPlayer} played in cell ${clickedCellIndex}`);
+
+  handleResultValidation();
 }
 
 let handleResultValidation = function() {
-  let roundWon = false;
   for (let i = 0; i <= 7; i++) {
     const winCondition = winningConditions[i];
     let a = gameState[winCondition[0]];
@@ -120,60 +170,53 @@ let handleResultValidation = function() {
       continue;
     }
     if (a === b && b === c) {
-      roundWon = true;
-      break
+      const message = winningMessage();
+      handleGameResult(message);
+      liveswitchChannel.sendMessage(message);
+      return;
     }
   }
-  if (roundWon) {
-    var message = winningMessage();
-    statusDisplay.innerHTML = message
-    gameActive = false;
+
+  if (!gameState.includes("")) {
+    const message = drawMessage();
+    handleGameResult(message);
     liveswitchChannel.sendMessage(message);
     return;
   }
 
-  let roundDraw = !gameState.includes("");
-  if (roundDraw) {
-    var message = drawMessage();
-    statusDisplay.innerHTML = message;
-    gameActive = false;
-    liveswitchChannel.sendMessage(message);
-    return;
-  }
-
+  // New: Switch to the next player's turn.
   currentPlayer = currentPlayer === "X" ? "O" : "X";
 }
 
 fm.liveswitch.Log.registerProvider(new fm.liveswitch.ConsoleLogProvider(fm.liveswitch.LogLevel.Debug));
 
-startButton.addEventListener('click', handleStartClick);
-document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', handleCellClick));
+// New: Add event listeners for player join and leave.
+liveswitchChannel.addOnRemoteClientJoin((remoteClientInfo) => {
+  handlePlayerJoin();
+});
 
+liveswitchChannel.addOnRemoteClientLeave((remoteClientInfo) => {
+  handlePlayerLeave();
+});
+
+liveswitchChannel.addOnMessage(function(sender, message) {
+  if (sender.getId() === liveswitchClient.getId()) {
+    // Ignore self.
+    return;
+  }
+  fm.liveswitch.Log.debug(`Message received: ${message} from: ${sender.getId()}`);
+});
+
+if (liveswitchChannel.getRemoteClientInfos().length > 0) {
+  handlePlayerJoin();
+}
+
+startButton.addEventListener('click', handleStartClick);
+document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', handleCellClick);
+
+// New: Connect to the LiveSwitch server and log success/failure.
 connectToLiveSwitchServer().then(() => {
   fm.liveswitch.Log.debug("Connected to server");
-
-  liveswitchChannel.addOnRemoteClientJoin((remoteClientInfo) => {
-    startButton.disabled = false;
-  });
-
-  liveswitchChannel.addOnRemoteClientLeave((remoteClientInfo) => {
-    if (liveswitchChannel.getRemoteClientInfos().length == 0) {
-      startButton.disabled = true;
-    }
-  });
-
-  liveswitchChannel.addOnMessage(function (sender, message) {
-    if (sender.getId() == liveswitchClient.getId()) {
-      // ignore self
-      return;
-    }
-    fm.liveswitch.Log.debug(`Message received: ${message} from: ${sender.getId()}`);
-  });
-
-  if (liveswitchChannel.getRemoteClientInfos().length > 0) {
-    startButton.disabled = false;
-  }
-})
-.fail((ex) => {
+}).fail((ex) => {
   fm.liveswitch.Log.debug("Failed to connect to server");
 });
